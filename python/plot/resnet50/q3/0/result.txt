@@ -1,0 +1,8 @@
+Accuracy 94.59
+Specificity 100.00
+Recall 66.67
+Precision 100.00
+F1_score 80.00
+FAR 0.00
+FRR 33.33
+Time 90.27

@@ -1,0 +1,23 @@
+File name: Date_Time_Hand_IMU.txt
+1. 손등 IMU의 euler angle x축 
+2. 손등 IMU의 euler angle y축
+3. 손등 IMU의 euler angle z축
+4. 첫번째 손가락 IMU의  euler angle x축
+5. 두번째 손가락 IMU의  euler angle x축
+6. 0 
+7. 첫번째 손가락 IMU의  accelerometer x축
+8. 첫번째 손가락 IMU의  accelerometer y축
+9. 첫번째 손가락 IMU의  accelerometer z축
+10. 두번째 손가락 IMU의  accelerometer x축
+11. 두번째 손가락 IMU의  accelerometer y축
+12. 두번째 손가락 IMU의  accelerometer z축
+
+File name: Date_Time_Wrist_IMU.txt
+1. 손목 IMU의 euler angle x축 
+2. 손목 IMU의 euler angle y축
+3. 손목 IMU의 euler angle z축
+4. 손목 IMU의  accelerometer x축
+5. 손목 IMU의  accelerometer y축
+6. 손목 IMU의  accelerometer z축
+
+이렇게 순서입니다

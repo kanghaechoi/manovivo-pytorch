@@ -1,0 +1,12 @@
+features = [
+1. scaled_thumb_acc_mag  
+2. scaled_index_acc_mag
+3. scaled_wrist_acc_mag
+4. scaled_thumb_x_angle
+5. scaled_index_x_angle
+6. scaled_hand_x_angle
+7. scaled_hand_y_angle
+8. scaled_hand_z_angle
+9. scaled_wrist_x_angle
+10. scaled_wrist_y_angle
+11. scaled_wrist_z_angle

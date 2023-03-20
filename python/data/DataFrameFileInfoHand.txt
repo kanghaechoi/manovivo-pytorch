@@ -1,0 +1,1 @@
+hand_x_angle;hand_y_angle;hand_z_angle;thumb_x_angle;index_x_angle;empty;thumb_acc_x;thumb_acc_y;thumb_acc_z;index_acc_x;index_acc_y;index_acc_z
