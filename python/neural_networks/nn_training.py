@@ -1,10 +1,11 @@
 import numpy as np
-import tensorflow as tf
+import torch
+import torch.nn as nn
+import torch.optim as optim
 
+loss_function = nn.CrossEntropyLoss()
 
-loss_object = tf.keras.losses.BinaryCrossentropy()
-
-optimizer = tf.keras.optimizers.Adam()
+optimizer = optim.Adam()
 
 training_loss = tf.keras.metrics.BinaryCrossentropy(name="train_loss")
 training_accuracy = tf.keras.metrics.BinaryAccuracy(name="train_accuracy")
@@ -13,23 +14,26 @@ test_loss = tf.keras.metrics.BinaryCrossentropy(name="test_loss")
 test_accuracy = tf.keras.metrics.BinaryAccuracy(name="test_accuracy")
 
 
-@tf.function
-def training_step(model: tf.keras.Model, data: tf.Tensor, labels: tf.Tensor):
-    with tf.GradientTape(persistent=True) as tape:
+def training_step(
+    model: nn.Module, data: torch.Tensor, labels: torch.Tensor, iterations: int
+):
+    for iteration in range(iterations):
         # training=True is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
         predictions = model(data, training=True)
-        loss = loss_object(labels, predictions)
+        loss = loss_function(predictions, labels)
 
-    gradients = tape.gradient(loss, model.trainable_variables)
-    optimizer.apply_gradients(zip(gradients, model.trainable_variables))
+        optimizer.zero_grad()
+
+        loss.backward()
+
+        optimizer.step()
 
     training_loss(labels, predictions)
     training_accuracy(labels, predictions)
 
 
-@tf.function
-def test_step(model: tf.keras.Model, data: tf.Tensor, labels: tf.Tensor):
+def test_step(model: nn.Module, data: torch.Tensor, labels: torch.Tensor):
     # training=False is only needed if there are layers with different
     # behavior during training versus inference (e.g. Dropout).
     predictions = model(data, training=False)
@@ -42,8 +46,8 @@ def test_step(model: tf.keras.Model, data: tf.Tensor, labels: tf.Tensor):
 class NNTraining:
     def __init__(
         self,
-        _model: tf.keras.Model,
-        _optimizer: tf.keras.optimizers,
+        _model: nn.Module,
+        _optimizer: optim,
         _epochs: int,
         _batch_size: int,
         _saved_models_path: str,
