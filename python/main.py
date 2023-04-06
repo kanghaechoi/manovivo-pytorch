@@ -1,5 +1,5 @@
-import tensorflow as tf
 import numpy as np
+import torch.optim as optim
 
 from dataset.extraction import Extraction
 from dataset.divide import Divide
@@ -11,7 +11,8 @@ from utilities.dimension import Dimension
 from utilities.fetcher import Fetcher
 
 from neural_networks.resnet import ResNet
-from neural_networks.nn_training import NNTraining
+from neural_networks.model_training import ModelTraining
+from neural_networks.model_test import ModelTest
 
 
 if __name__ == "__main__":
@@ -137,13 +138,13 @@ if __name__ == "__main__":
     """
     Model training
     """
-    epochs: str = input("Please insert the number of epochs: ")
+    epochs = input("Please insert the number of epochs: ")
     epochs: int = int(epochs)
 
-    batch_size: str = input("Please insert batch size: ")
+    batch_size = input("Please insert batch size: ")
     batch_size: int = int(batch_size)
 
-    chosen_model: str = input(
+    chosen_model = input(
         "Please select a model to train.\n(1) ResNet-50\n(2) ResNet-101\n(3) ResNet-152\n"
     )
     chosen_model: int = int(chosen_model)
@@ -162,10 +163,10 @@ if __name__ == "__main__":
 
     resnet = ResNet(resnet_block_parameters, number_of_classes)
 
-    adam_optimizer = tf.keras.optimizers.Adam(learning_rate=0.0001)
-    rms_prop_optimizer = tf.keras.optimizers.RMSprop(learning_rate=0.0001)
+    adam_optimizer = optim.Adam([], lr=0.0001)
+    rms_prop_optimizer = optim.RMSprop([], lr=0.0001)
 
-    nn_training = NNTraining(
+    nn_training = ModelTraining(
         resnet,
         rms_prop_optimizer,
         epochs,
@@ -173,10 +174,11 @@ if __name__ == "__main__":
         saved_models_path,
     )
     nn_training.train_model(training_data, training_labels)
-    nn_training.save_trained_model()
-    nn_training.test_trained_model(test_data, test_labels)
 
-    new_resnet = tf.keras.models.load_model(saved_models_path)
+    model_test = ModelTest(resnet, saved_models_path, nn_training.training_status)
+    model_test.test_model(test_data, test_labels)
+
+    new_resnet = model_test.get_trained_model(saved_models_path)
     new_resnet.summary()
 
     breakpoint()
