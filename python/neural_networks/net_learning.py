@@ -15,6 +15,7 @@ class NetLearning:
         self.save_path = _save_path
         self.loss_function = _loss_function
 
+        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.is_trained: bool = False
 
     def _train_step(
@@ -62,14 +63,16 @@ class NetLearning:
         for epoch in range(_epochs):
             # Reset the metrics at the start of the next epoch
 
-            dataset = DataLoader(
-                TensorDataset(_data, _labels),
+            dataset = (TensorDataset(_data.to(self.device), _labels.to(self.device)),)
+
+            data_loader = DataLoader(
+                dataset=dataset,
                 batch_size=_batch_size,
                 shuffle=_shuffle,
                 drop_last=_drop_last,
             )
 
-            for batch_index, (batch_data, batch_labels) in enumerate(dataset):
+            for batch_index, (batch_data, batch_labels) in enumerate(data_loader):
                 one_hot_labels = F.one_hot(
                     torch.squeeze(batch_labels),
                     num_classes=2,
@@ -80,11 +83,13 @@ class NetLearning:
                     one_hot_labels,
                     _optimizer,
                 )
-
+                
+                loss = training_loss.item() * batch_data.size(0)
+                
                 print(
                     f"Epoch: {epoch + 1}, "
                     f"Mini Batch: {batch_index + 1}, "
-                    f"Training Loss: {training_loss.item()}, "
+                    f"Training Loss: {}, "
                     f"Training Accuracy: {(1-training_loss.item()) * 100}"
                 )
 
@@ -103,9 +108,11 @@ class NetLearning:
 
         model = _model.load_state_dict(torch.load(self.save_path))
 
-        dataset = DataLoader(TensorDataset(_data, _labels))
+        dataset = TensorDataset(_data.to(self.device), _labels.to(self.device))
 
-        for data, labels in dataset:
+        data_loader = DataLoader(dataset)
+
+        for data, labels in data_loader:
             one_hot_labels = F.one_hot(torch.squeeze(labels), 2)
 
             test_loss = self._test_step(model, data, one_hot_labels)

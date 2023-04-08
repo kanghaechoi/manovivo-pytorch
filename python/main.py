@@ -12,7 +12,6 @@ from utilities.fetcher import Fetcher
 
 from neural_networks.resnet import ResNet
 from neural_networks.net_learning import NetLearning
-from neural_networks.test import Test
 
 
 if __name__ == "__main__":
