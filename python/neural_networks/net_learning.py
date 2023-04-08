@@ -83,13 +83,14 @@ class NetLearning:
                     one_hot_labels,
                     _optimizer,
                 )
-                
-                loss = training_loss.item() * batch_data.size(0)
-                
+
+                loss += training_loss.item() * batch_data.size(0)
+                running_corrects += torch.sum(preds == labels.data)
+
                 print(
                     f"Epoch: {epoch + 1}, "
                     f"Mini Batch: {batch_index + 1}, "
-                    f"Training Loss: {}, "
+                    f"Loss: {loss}, "
                     f"Training Accuracy: {(1-training_loss.item()) * 100}"
                 )
 
