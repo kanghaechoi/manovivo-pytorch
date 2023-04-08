@@ -11,8 +11,8 @@ from utilities.dimension import Dimension
 from utilities.fetcher import Fetcher
 
 from neural_networks.resnet import ResNet
-from neural_networks.model_training import ModelTraining
-from neural_networks.model_test import ModelTest
+from neural_networks.net_learning import NetLearning
+from neural_networks.test import Test
 
 
 if __name__ == "__main__":
@@ -29,22 +29,22 @@ if __name__ == "__main__":
     Data fetch configuration
     """
     if research_question == 1:
-        subject_age1: int = 20
-        subject_age2: int = 50
-        subject_age3: int = 70
+        subject_age_1: int = 20
+        subject_age_2: int = 50
+        subject_age_3: int = 70
 
-        ages = [subject_age1, subject_age2, subject_age3]
+        ages = [subject_age_1, subject_age_2, subject_age_3]
 
         authentication_classes = None
         authentication_flag: bool = False
         number_of_classes = len(ages)
     elif research_question == 2 or research_question == 3:
-        subject_age1 = 20
+        subject_age_1 = 20
 
         is_not_authorized: int = 0
         is_authorized: int = 1
 
-        ages = [subject_age1]
+        ages = [subject_age_1]
         authentication_classes = [is_authorized, is_not_authorized]
         authentication_flag: bool = True
         number_of_classes = len(authentication_classes)
@@ -75,19 +75,19 @@ if __name__ == "__main__":
         sample_length,
         authentication_classes,
     )
-    data, labels = extraction.extract_dataset()
+    _data, _labels = extraction.extract_dataset()
 
-    data_depth: int = data.shape[2]
-    data_width: int = data.shape[1]
-    data_height: int = data.shape[0]
+    data_depth: int = _data.shape[2]
+    data_width: int = _data.shape[1]
+    data_height: int = _data.shape[0]
 
     """
     Array dimension manipulation (Temporal)
     """
     dimension = Dimension()
     # if research_question == 2 or research_question == 3:
-    data = dimension.numpy_squeeze(
-        data,
+    _data = dimension.numpy_squeeze(
+        _data,
         data_depth,
         data_width,
         data_height,
@@ -96,8 +96,8 @@ if __name__ == "__main__":
     """
     Feature Normalization
     """
-    normalization = MinMaxNormalization(data)
-    normalized_data = normalization.transform(data)
+    normalization = MinMaxNormalization(_data)
+    normalized_data = normalization.transform(_data)
 
     normalized_data = dimension.numpy_unsqueeze(
         normalized_data,
@@ -106,11 +106,11 @@ if __name__ == "__main__":
         data_height,
     )
 
-    divide = Divide(normalized_data, labels)
+    divide = Divide(normalized_data, _labels)
     divide.fit(test_dataset_ratio=0.2)
 
     training_data, training_labels = divide.training_dataset()
-    test_data, test_labels = divide.test_dataset()
+    data, labels = divide.test_dataset()
 
     """
     Feature selection using ReliefF algorithm
@@ -132,8 +132,8 @@ if __name__ == "__main__":
 
     training_data = training_data[:, :, top_feature_indices]
     training_data = np.expand_dims(training_data, axis=3)
-    test_data = test_data[:, :, top_feature_indices]
-    test_data = np.expand_dims(test_data, axis=3)
+    data = data[:, :, top_feature_indices]
+    data = np.expand_dims(data, axis=3)
 
     """
     Model training
@@ -144,20 +144,20 @@ if __name__ == "__main__":
     batch_size = input("Please insert batch size: ")
     batch_size: int = int(batch_size)
 
-    chosen_model = input(
+    resnet_type = input(
         "Please select a model to train.\n(1) ResNet-50\n(2) ResNet-101\n(3) ResNet-152\n"
     )
-    chosen_model: int = int(chosen_model)
+    resnet_type: int = int(resnet_type)
 
-    if chosen_model == 1:
+    if resnet_type == 1:
         resnet_block_parameters: list = [3, 4, 6, 3]
-        saved_models_path: str = "./python/saved_models/resnet50"
-    elif chosen_model == 2:
+        save_path: str = "./python/saved_models/resnet50"
+    elif resnet_type == 2:
         resnet_block_parameters: list = [3, 4, 23, 3]
-        saved_models_path: str = "./python/saved_models/resnet101"
-    elif chosen_model == 3:
+        save_path: str = "./python/saved_models/resnet101"
+    elif resnet_type == 3:
         resnet_block_parameters: list = [3, 8, 36, 3]
-        saved_models_path: str = "./python/saved_models/resnet152"
+        save_path: str = "./python/saved_models/resnet152"
     else:
         raise ValueError
 
@@ -166,20 +166,17 @@ if __name__ == "__main__":
     adam_optimizer = optim.Adam([], lr=0.0001)
     rms_prop_optimizer = optim.RMSprop([], lr=0.0001)
 
-    nn_training = ModelTraining(
-        resnet,
-        rms_prop_optimizer,
-        epochs,
-        batch_size,
-        saved_models_path,
+    net_learning = NetLearning(save_path)
+    net_learning.train(
+        _model=resnet,
+        _data=training_data,
+        _labels=training_labels,
+        _epochs=epochs,
+        _batch_size=batch_size,
+        _optimizer=adam_optimizer,
     )
-    nn_training.train_model(training_data, training_labels)
 
-    model_test = ModelTest(resnet, saved_models_path, nn_training.training_status)
-    model_test.test_model(test_data, test_labels)
-
-    new_resnet = model_test.get_trained_model(saved_models_path)
-    new_resnet.summary()
+    net_learning.test(_model=resnet, _data=data, _labels=labels)
 
     breakpoint()
 

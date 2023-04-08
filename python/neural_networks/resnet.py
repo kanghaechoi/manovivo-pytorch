@@ -1,5 +1,4 @@
-from typing import List
-
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -30,7 +29,7 @@ def residual_convolution_layer_type2(in_channels: int, blocks: int, stride: int 
 
 
 class ResNet(nn.Module):
-    def __init__(self, _block_parameters: List[int], _dim: int) -> None:
+    def __init__(self, _block_parameters: list[int], _dim: int) -> None:
         super().__init__()
 
         self.convolution_layer_type_1 = nn.Conv2d(
@@ -60,7 +59,7 @@ class ResNet(nn.Module):
 
         self.fully_connected_layer = nn.Softmax(dim=_dim)
 
-    def forward(self, input) -> nn.Module:
+    def forward(self, input: torch.Tensor) -> nn.Module:
         x = self.convolution_layer_type_1(input)
         x = F.batch_norm(x)
         x = F.relu(x)
