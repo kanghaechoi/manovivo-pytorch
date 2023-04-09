@@ -163,17 +163,17 @@ if __name__ == "__main__":
 
     resnet = ResNet(resnet_block_parameters, number_of_classes)
 
-    adam_optimizer = optim.Adam([], lr=0.0001)
-    rms_prop_optimizer = optim.RMSprop([], lr=0.0001)
+    adam_optimizer = optim.Adam(resnet.parameters(), lr=0.0001)
+    rms_prop_optimizer = optim.RMSprop(resnet.parameters(), lr=0.0001)
 
     net_learning = NetLearning(model_weights_path)
     net_learning.train(
         _model=resnet,
         _data=torch.Tensor(training_data),
         _labels=torch.Tensor(training_labels),
+        _optimizer=adam_optimizer,
         _epochs=epochs,
         _batch_size=batch_size,
-        _optimizer=adam_optimizer,
     )
 
     net_learning.test(

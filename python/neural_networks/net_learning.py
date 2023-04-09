@@ -55,9 +55,9 @@ class NetLearning:
         _model: nn.Module,
         _data: torch.Tensor,
         _labels: torch.Tensor,
+        _optimizer: optim.Optimizer,
         _epochs: int = 256,
         _batch_size: int = 64,
-        _optimizer: optim.Optimizer = optim.Adam(),
         _shuffle: bool = True,
         _drop_last: bool = True,
     ) -> None:
