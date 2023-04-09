@@ -1,4 +1,5 @@
 import numpy as np
+import torch
 import torch.optim as optim
 
 from dataset.extraction import Extraction
@@ -109,7 +110,7 @@ if __name__ == "__main__":
     divide.fit(test_dataset_ratio=0.2)
 
     training_data, training_labels = divide.training_dataset()
-    data, labels = divide.test_dataset()
+    test_data, test_labels = divide.test_dataset()
 
     """
     Feature selection using ReliefF algorithm
@@ -131,32 +132,32 @@ if __name__ == "__main__":
 
     training_data = training_data[:, :, top_feature_indices]
     training_data = np.expand_dims(training_data, axis=3)
-    data = data[:, :, top_feature_indices]
-    data = np.expand_dims(data, axis=3)
+    test_data = test_data[:, :, top_feature_indices]
+    test_data = np.expand_dims(test_data, axis=3)
 
     """
-    Model training
+    Neural Net training
     """
-    epochs = input("Please insert the number of epochs: ")
+    epochs = input("Please insert the number of epochs: \n")
     epochs: int = int(epochs)
 
-    batch_size = input("Please insert batch size: ")
+    batch_size = input("Please insert batch size: \n")
     batch_size: int = int(batch_size)
 
     resnet_type = input(
-        "Please select a model to train.\n(1) ResNet-50\n(2) ResNet-101\n(3) ResNet-152\n"
+        "Please select the number of ResNet layers (50 layers, 101 layers, 152 layers).\n"
     )
     resnet_type: int = int(resnet_type)
 
-    if resnet_type == 1:
+    if resnet_type == 50:
         resnet_block_parameters: list = [3, 4, 6, 3]
-        save_path: str = "./python/saved_models/resnet50"
-    elif resnet_type == 2:
+        model_weights_path: str = "./saved_weights/resnet_50_weights.pth"
+    elif resnet_type == 101:
         resnet_block_parameters: list = [3, 4, 23, 3]
-        save_path: str = "./python/saved_models/resnet101"
-    elif resnet_type == 3:
+        model_weights_path: str = "./saved_weights/resnet_101_weights.pth"
+    elif resnet_type == 152:
         resnet_block_parameters: list = [3, 8, 36, 3]
-        save_path: str = "./python/saved_models/resnet152"
+        model_weights_path: str = "./saved_weights/resnet_152_weights.pth"
     else:
         raise ValueError
 
@@ -165,17 +166,21 @@ if __name__ == "__main__":
     adam_optimizer = optim.Adam([], lr=0.0001)
     rms_prop_optimizer = optim.RMSprop([], lr=0.0001)
 
-    net_learning = NetLearning(save_path)
+    net_learning = NetLearning(model_weights_path)
     net_learning.train(
         _model=resnet,
-        _data=training_data,
-        _labels=training_labels,
+        _data=torch.Tensor(training_data),
+        _labels=torch.Tensor(training_labels),
         _epochs=epochs,
         _batch_size=batch_size,
         _optimizer=adam_optimizer,
     )
 
-    net_learning.test(_model=resnet, _data=data, _labels=labels)
+    net_learning.test(
+        _model=resnet,
+        _data=torch.Tensor(test_data),
+        _labels=torch.Tensor(test_labels),
+    )
 
     breakpoint()
 

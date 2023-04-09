@@ -5,17 +5,18 @@ import torch.optim as optim
 
 from torch.utils.data import TensorDataset, DataLoader
 
+_device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 
 class NetLearning:
     def __init__(
         self,
-        _save_path: str,
+        _model_weights_path: str,
         _loss_function: nn.Module = nn.BCELoss(),
     ) -> None:
-        self.save_path = _save_path
+        self.model_weights_path = _model_weights_path
         self.loss_function = _loss_function
 
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
         self.is_trained: bool = False
 
     def _train_step(
@@ -60,10 +61,12 @@ class NetLearning:
         _shuffle: bool = True,
         _drop_last: bool = True,
     ) -> None:
+        model = _model.to(_device)
+
         for epoch in range(_epochs):
             # Reset the metrics at the start of the next epoch
 
-            dataset = (TensorDataset(_data.to(self.device), _labels.to(self.device)),)
+            dataset = (TensorDataset(_data.to(_device), _labels.to(_device)),)
 
             data_loader = DataLoader(
                 dataset=dataset,
@@ -78,25 +81,25 @@ class NetLearning:
                     num_classes=2,
                 )
                 training_loss = self._train_step(
-                    _model,
+                    model,
                     batch_data,
                     one_hot_labels,
                     _optimizer,
                 )
 
-                loss += training_loss.item() * batch_data.size(0)
-                running_corrects += torch.sum(preds == labels.data)
+                # loss += training_loss.item() * batch_data.size(0)
+                # running_corrects += torch.sum(preds == labels.data)
 
                 print(
                     f"Epoch: {epoch + 1}, "
-                    f"Mini Batch: {batch_index + 1}, "
-                    f"Loss: {loss}, "
+                    f"Batch: {batch_index + 1}, "
+                    f"Loss: {training_loss.item()}, "
                     f"Training Accuracy: {(1-training_loss.item()) * 100}"
                 )
 
         self.is_trained = True
 
-        torch.save(_model.state_dict(), self.save_path)
+        torch.save(model.state_dict(), self.model_weights_path)
 
     def test(
         self,
@@ -107,7 +110,7 @@ class NetLearning:
         if self.is_trained is False:
             SystemError("Please train a model in advance.")
 
-        model = _model.load_state_dict(torch.load(self.save_path))
+        model = _model.load_state_dict(torch.load(self.model_weights_path))
 
         dataset = TensorDataset(_data.to(self.device), _labels.to(self.device))
 
