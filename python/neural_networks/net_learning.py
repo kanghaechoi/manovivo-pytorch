@@ -1,7 +1,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import torch.optim as optim
 
 from torch.utils.data import TensorDataset, DataLoader
 
@@ -24,15 +23,15 @@ class NetLearning:
         _model: nn.Module,
         _data: torch.Tensor,
         _labels: torch.Tensor,
+        _optimizer,
     ):
+        breakpoint()
         predictions = _model(_data)
         loss = self.loss_function(predictions, _labels)
 
-        self.optimizer.zero_grad()
-
+        _optimizer.zero_grad()
         loss.backward()
-
-        self.optimizer.step()
+        _optimizer.step()
 
         return loss
 
@@ -44,6 +43,7 @@ class NetLearning:
     ):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
+        breakpoint()
         predictions = _model(_data)
 
         loss = self.loss_function(predictions, _labels)
@@ -52,21 +52,21 @@ class NetLearning:
 
     def train(
         self,
-        _model: nn.Module,
+        _model,
         _data: torch.Tensor,
-        _labels: torch.Tensor,
-        _optimizer: optim.Optimizer,
+        _labels: torch.LongTensor,
+        _optimizer,
         _epochs: int = 256,
         _batch_size: int = 64,
         _shuffle: bool = True,
         _drop_last: bool = True,
-    ) -> None:
+    ):
         model = _model.to(_device)
 
         for epoch in range(_epochs):
             # Reset the metrics at the start of the next epoch
 
-            dataset = (TensorDataset(_data.to(_device), _labels.to(_device)),)
+            dataset = TensorDataset(_data.to(_device), _labels.to(_device))
 
             data_loader = DataLoader(
                 dataset=dataset,
@@ -80,13 +80,15 @@ class NetLearning:
                     torch.squeeze(batch_labels),
                     num_classes=2,
                 )
+
+                breakpoint()
                 training_loss = self._train_step(
                     model,
                     batch_data,
                     one_hot_labels,
                     _optimizer,
                 )
-
+                breakpoint()
                 # loss += training_loss.item() * batch_data.size(0)
                 # running_corrects += torch.sum(preds == labels.data)
 
@@ -103,25 +105,26 @@ class NetLearning:
 
     def test(
         self,
-        _model: nn.Module,
+        _model,
         _data: torch.Tensor,
-        _labels: torch.Tensor,
-    ) -> None:
+        _labels: torch.LongTensor,
+    ):
         if self.is_trained is False:
             SystemError("Please train a model in advance.")
 
+        breakpoint()
         model = _model.load_state_dict(torch.load(self.model_weights_path))
+        breakpoint()
+        # dataset = TensorDataset(_data.to(_device), _labels.to(_device))
 
-        dataset = TensorDataset(_data.to(self.device), _labels.to(self.device))
+        # data_loader = DataLoader(dataset)
 
-        data_loader = DataLoader(dataset)
+        # for _, (data, labels) in enumerate(data_loader):
+        one_hot_labels = F.one_hot(torch.squeeze(_labels.to(_device)), 2)
 
-        for data, labels in data_loader:
-            one_hot_labels = F.one_hot(torch.squeeze(labels), 2)
+        test_loss = self._test_step(model, _data, one_hot_labels)
 
-            test_loss = self._test_step(model, data, one_hot_labels)
-
-            print(
-                f"Test Loss: {test_loss.item()}, "
-                f"Test Accuracy: {(1 -  test_loss.item()) * 100}"
-            )
+        print(
+            f"Test Loss: {test_loss.item()}, "
+            f"Test Accuracy: {(1 -  test_loss.item()) * 100}"
+        )

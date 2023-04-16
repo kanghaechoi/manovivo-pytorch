@@ -131,12 +131,12 @@ if __name__ == "__main__":
     top_feature_indices = relieff.top_features[0 : relieff.n_features_to_keep]
 
     training_data = training_data[:, :, top_feature_indices]
-    training_data = np.expand_dims(training_data, axis=3)
+    training_data = np.expand_dims(training_data, axis=1)
     test_data = test_data[:, :, top_feature_indices]
-    test_data = np.expand_dims(test_data, axis=3)
+    test_data = np.expand_dims(test_data, axis=1)
 
     """
-    Neural Net training
+    Neural Network
     """
     epochs = input("Please insert the number of epochs: \n")
     epochs: int = int(epochs)
@@ -167,19 +167,20 @@ if __name__ == "__main__":
     rms_prop_optimizer = optim.RMSprop(resnet.parameters(), lr=0.0001)
 
     net_learning = NetLearning(model_weights_path)
-    net_learning.train(
+    a = net_learning.train(
         _model=resnet,
         _data=torch.Tensor(training_data),
-        _labels=torch.Tensor(training_labels),
+        _labels=torch.LongTensor(training_labels),
         _optimizer=adam_optimizer,
         _epochs=epochs,
         _batch_size=batch_size,
     )
+    print(a)
 
     net_learning.test(
         _model=resnet,
         _data=torch.Tensor(test_data),
-        _labels=torch.Tensor(test_labels),
+        _labels=torch.LongTensor(test_labels),
     )
 
     breakpoint()
