@@ -5,8 +5,8 @@ import torch.optim as optim
 from dataset.extraction import Extraction
 from dataset.divide import Divide
 
-from filters.normalization import MinMaxNormalization
-from filters.relieff import ReliefF
+from normalizations.min_max_normalization import MinMaxNormalization
+from selections.relieff import ReliefF
 
 from utilities.dimension import Dimension
 from utilities.fetcher import Fetcher
@@ -57,7 +57,7 @@ if __name__ == "__main__":
     # sample_length = input("Please insert sample length. (1 sample length = 1/100 sec)")
     # sample_length = int(sample_length)
     # sample_length: int = 50  # 0.5 Seconds
-    sample_length: int = 100  # 1 Second
+    sample_length: int = 150  # 1 Second
 
     fetch = Fetcher(
         research_question,
@@ -101,9 +101,9 @@ if __name__ == "__main__":
 
     normalized_data = dimension.numpy_unsqueeze(
         normalized_data,
-        data_depth,
         data_width,
         data_height,
+        data_depth,
     )
 
     divide = Divide(normalized_data, _labels)
@@ -167,7 +167,7 @@ if __name__ == "__main__":
     rms_prop_optimizer = optim.RMSprop(resnet.parameters(), lr=0.0001)
 
     net_learning = NetLearning(model_weights_path)
-    a = net_learning.train(
+    net_learning.train(
         _model=resnet,
         _data=torch.Tensor(training_data),
         _labels=torch.LongTensor(training_labels),
@@ -175,10 +175,10 @@ if __name__ == "__main__":
         _epochs=epochs,
         _batch_size=batch_size,
     )
-    print(a)
 
+    test_resnet = ResNet(resnet_block_parameters, number_of_classes)
     net_learning.test(
-        _model=resnet,
+        _model=test_resnet,
         _data=torch.Tensor(test_data),
         _labels=torch.LongTensor(test_labels),
     )

@@ -11,7 +11,7 @@ class NetLearning:
     def __init__(
         self,
         _model_weights_path: str,
-        _loss_function: nn.Module = nn.BCELoss(),
+        _loss_function: torch.Tensor = F.binary_cross_entropy,
     ) -> None:
         self.model_weights_path = _model_weights_path
         self.loss_function = _loss_function
@@ -20,14 +20,17 @@ class NetLearning:
 
     def _train_step(
         self,
-        _model: nn.Module,
+        _model,
         _data: torch.Tensor,
-        _labels: torch.Tensor,
+        _labels: torch.LongTensor,
         _optimizer,
     ):
-        breakpoint()
         predictions = _model(_data)
-        loss = self.loss_function(predictions, _labels)
+
+        loss = self.loss_function(
+            predictions,
+            _labels.type(torch.FloatTensor).to(_device),
+        )
 
         _optimizer.zero_grad()
         loss.backward()
@@ -37,16 +40,19 @@ class NetLearning:
 
     def _test_step(
         self,
-        _model: nn.Module,
+        _model,
         _data: torch.Tensor,
-        _labels: torch.Tensor,
+        _labels: torch.LongTensor,
     ):
         # training=False is only needed if there are layers with different
         # behavior during training versus inference (e.g. Dropout).
         breakpoint()
         predictions = _model(_data)
 
-        loss = self.loss_function(predictions, _labels)
+        loss = self.loss_function(
+            predictions,
+            _labels.type(torch.FloatTensor).to(_device),
+        )
 
         return loss
 
@@ -81,14 +87,12 @@ class NetLearning:
                     num_classes=2,
                 )
 
-                breakpoint()
                 training_loss = self._train_step(
                     model,
                     batch_data,
                     one_hot_labels,
                     _optimizer,
                 )
-                breakpoint()
                 # loss += training_loss.item() * batch_data.size(0)
                 # running_corrects += torch.sum(preds == labels.data)
 
@@ -112,9 +116,8 @@ class NetLearning:
         if self.is_trained is False:
             SystemError("Please train a model in advance.")
 
-        breakpoint()
-        model = _model.load_state_dict(torch.load(self.model_weights_path))
-        breakpoint()
+        _model.to(_device)
+        _model.load_state_dict(torch.load(self.model_weights_path))
         # dataset = TensorDataset(_data.to(_device), _labels.to(_device))
 
         # data_loader = DataLoader(dataset)
@@ -122,7 +125,7 @@ class NetLearning:
         # for _, (data, labels) in enumerate(data_loader):
         one_hot_labels = F.one_hot(torch.squeeze(_labels.to(_device)), 2)
 
-        test_loss = self._test_step(model, _data, one_hot_labels)
+        test_loss = self._test_step(_model, _data.to(_device), one_hot_labels)
 
         print(
             f"Test Loss: {test_loss.item()}, "

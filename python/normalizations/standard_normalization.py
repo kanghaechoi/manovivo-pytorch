@@ -1,10 +1,9 @@
 import numpy as np
 
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import StandardScaler
 
 
-class Normalization:
+class StandardNormalization:
     def __init__(self, _features: np.ndarray) -> None:
         scaler = StandardScaler()
         self.scaler = scaler.fit(_features)
@@ -24,10 +23,3 @@ class Normalization:
         _standard_deviation = np.sqrt(_variance)
 
         return _standard_deviation
-
-
-class MinMaxNormalization(Normalization):
-    def __init__(self, _features: np.ndarray) -> None:
-        super().__init__(_features)
-        scaler = MinMaxScaler()
-        self.scaler = scaler.fit(_features)
