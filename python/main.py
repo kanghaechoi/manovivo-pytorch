@@ -1,9 +1,11 @@
 import numpy as np
 import torch
-import torch.optim as optim
 
-from dataset.extraction import Extraction
-from dataset.divide import Divide
+from datasets.manovivo import Manovivo
+
+from utilities.extraction import Extraction
+from utilities.divide import Divide
+from neural_networks.train.optimizer import Optimizer
 
 from normalizations.min_max_normalization import MinMaxNormalization
 from selections.relieff import ReliefF
@@ -11,8 +13,9 @@ from selections.relieff import ReliefF
 from utilities.dimension import Dimension
 from utilities.fetcher import Fetcher
 
-from neural_networks.resnet import ResNet
-from neural_networks.net_learning import NetLearning
+from neural_networks.resnet.model import ResNet
+from neural_networks.train.net_learning import NetLearning
+from neural_networks.torch_device import torch_device
 
 
 if __name__ == "__main__":
@@ -25,6 +28,8 @@ if __name__ == "__main__":
     )
     research_question = int(research_question)
 
+    manovivo = Manovivo(research_question, 100)
+    manovivo.get_dataset(0)
     """
     Data fetch configuration
     """
@@ -75,19 +80,19 @@ if __name__ == "__main__":
         sample_length,
         authentication_classes,
     )
-    _data, _labels = extraction.extract_dataset()
+    data, labels = extraction.extract_dataset()
 
-    data_depth: int = _data.shape[2]
-    data_width: int = _data.shape[1]
-    data_height: int = _data.shape[0]
+    data_depth: int = data.shape[2]
+    data_width: int = data.shape[1]
+    data_height: int = data.shape[0]
 
     """
     Array dimension manipulation (Temporal)
     """
     dimension = Dimension()
     # if research_question == 2 or research_question == 3:
-    _data = dimension.numpy_squeeze(
-        _data,
+    data = dimension.numpy_squeeze(
+        data,
         data_depth,
         data_width,
         data_height,
@@ -96,8 +101,8 @@ if __name__ == "__main__":
     """
     Feature Normalization
     """
-    normalization = MinMaxNormalization(_data)
-    normalized_data = normalization.transform(_data)
+    normalization = MinMaxNormalization(data)
+    normalized_data = normalization.transform(data)
 
     normalized_data = dimension.numpy_unsqueeze(
         normalized_data,
@@ -106,7 +111,7 @@ if __name__ == "__main__":
         data_depth,
     )
 
-    divide = Divide(normalized_data, _labels)
+    divide = Divide(normalized_data, labels)
     divide.fit(test_dataset_ratio=0.2)
 
     training_data, training_labels = divide.training_dataset()
@@ -161,26 +166,30 @@ if __name__ == "__main__":
     else:
         raise ValueError
 
-    resnet = ResNet(resnet_block_parameters, number_of_classes)
+    tensor = Tensor()
 
-    adam_optimizer = optim.Adam(resnet.parameters(), lr=0.0001)
-    rms_prop_optimizer = optim.RMSprop(resnet.parameters(), lr=0.0001)
+    resnet = ResNet(resnet_block_parameters, number_of_classes).to(tensor.device)
+
+    optimizer = Optimizer(
+        target="adam",
+        network_parameters=resnet.parameters(),
+        learning_rate=1e-4,
+    )
 
     net_learning = NetLearning(model_weights_path)
     net_learning.train(
-        _model=resnet,
-        _data=torch.Tensor(training_data),
-        _labels=torch.LongTensor(training_labels),
-        _optimizer=adam_optimizer,
-        _epochs=epochs,
-        _batch_size=batch_size,
+        model=resnet,
+        data=torch.FloatTensor(training_data, device=torch_device),
+        labels=torch.LongTensor(training_labels, device=torch_device),
+        optimizer=optimizer,
+        epochs=epochs,
+        batch_size=batch_size,
     )
 
-    test_resnet = ResNet(resnet_block_parameters, number_of_classes)
-    net_learning.test(
-        _model=test_resnet,
-        _data=torch.Tensor(test_data),
-        _labels=torch.LongTensor(test_labels),
+    net_learning.evaluate(
+        neural_network=resnet,
+        data=torch.FloatTensor(test_data, device=torch_device),
+        labels=torch.LongTensor(test_labels, device=torch_device),
     )
 
     breakpoint()
